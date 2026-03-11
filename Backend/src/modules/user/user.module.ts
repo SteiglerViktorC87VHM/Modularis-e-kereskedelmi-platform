@@ -10,5 +10,6 @@ import { Store } from '../store/entities/store.entity';
   imports: [TypeOrmModule.forFeature([User, Store])], 
   controllers: [UserController],
   providers: [UserService],
+  exports: [UserService], // Ezt exportáljuk, hogy más modulokban is használni tudjuk (pl. AuthModule)
 })
 export class UserModule {}

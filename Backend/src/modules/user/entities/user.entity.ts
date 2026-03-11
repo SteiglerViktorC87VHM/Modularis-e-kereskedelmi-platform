@@ -1,5 +1,6 @@
 import { Store } from 'src/modules/store/entities/store.entity';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Role } from '../enum/role.enum';
 
 @Entity('users')
 export class User {
@@ -15,8 +16,12 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ default: 'customer' })
-  role: string;
+  @Column({
+  type: 'enum',
+  enum: Role,
+  default: Role.USER,
+})
+role: Role;
 
   @CreateDateColumn()
   createdAt: Date;
