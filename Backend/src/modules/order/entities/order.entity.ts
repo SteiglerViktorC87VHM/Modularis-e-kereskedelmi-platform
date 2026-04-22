@@ -27,9 +27,13 @@ export class Order {
   created_at: Date;
 
   // Kapcsolatok
-  @ManyToOne(() => Store, (store) => store.orders)
-  @JoinColumn({ name: 'store_id' })
-  store: Store;
+  @ManyToOne(() => Store, (store) => store.orders, { 
+  onDelete: 'CASCADE' 
+})
+@JoinColumn({ name: 'store_id' })
+store: Store;
+  
+ 
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];

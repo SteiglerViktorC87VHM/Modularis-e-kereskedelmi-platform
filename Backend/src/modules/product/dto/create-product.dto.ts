@@ -1,10 +1,7 @@
-
-import { IsString, IsNumber, IsUUID, Min, MinLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
-  @IsNotEmpty()
-  @MinLength(3)
   name: string;
 
   @IsNumber()
@@ -15,6 +12,13 @@ export class CreateProductDto {
   @Min(0)
   stock: number;
 
+  // Engedélyezzük a kategória nevét, de opcionálisra tesszük
+  @IsOptional()
+  @IsString()
+  categoryName?: string;
+
+  // Az ID-t opcionálisra vesszük, mert vagy ezt, vagy a nevet küldjük
+  @IsOptional()
   @IsUUID()
-  categoryId: string;
+  categoryId?: string;
 }

@@ -1,34 +1,62 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, Req } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../user/enum/role.enum';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('product')
+@ApiBearerAuth()
 @Controller('product')
+@UseGuards(JwtAuthGuard, RolesGuard) 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  @Post()
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productService.create(createProductDto);
+  // JAVÍTVA: Kivettük a req.user-t, mert a service már nem kéri
+  @Get('store/:storeId')
+  async getStoreProducts(@Param('storeId') storeId: string) {
+    return this.productService.findAllByStore(storeId);
+  }
+
+  @Post('store/:storeId')
+  @Roles(Role.STORE_OWNER, Role.ADMIN) 
+  async create(
+    @Param('storeId') storeId: string, 
+    @Body() createProductDto: CreateProductDto, 
+    @Request() req
+  ) {
+    return await this.productService.create(storeId, createProductDto, req.user);
   }
 
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  async findAll(@Query() query: { storeId?: string; search?: string; minPrice?: number; maxPrice?: number }) {
+    return await this.productService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return await this.productService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(id, updateProductDto);
+  @Roles(Role.STORE_OWNER, Role.ADMIN)
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @Request() req
+  ) {
+    return await this.productService.update(id, updateProductDto, req.user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productService.remove(id);
+  @Roles(Role.STORE_OWNER, Role.ADMIN)
+  async remove(@Param('id') id: string, @Request() req) {
+    return await this.productService.remove(id, req.user);
   }
 }
+  
+  
+

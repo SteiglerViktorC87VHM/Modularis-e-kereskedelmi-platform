@@ -11,14 +11,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     UserModule, // <--- Ettől fog működni a UserService a konstruktorban!
     PassportModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'titkos-kulcs-123',
-        signOptions: { expiresIn: '1h' }, // 1 óráig lesz érvényes a belépő
-      }),
-    }),
+JwtModule.registerAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: async (configService: ConfigService) => ({
+    secret: 'valami_nagyon_titkos_szoveg_123', 
+    signOptions: { expiresIn: '1h' },
+  }),
+}),
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],

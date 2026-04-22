@@ -33,12 +33,14 @@ constructor(
   const salt = await bcrypt.genSalt();
   const hashedPassword = await bcrypt.hash(userData.password, salt);
   
-  const newUser = this.userRepository.create({
+const newUser = this.userRepository.create({
     ...userData,
     password: hashedPassword,
   });
   
   return this.userRepository.save(newUser);
+  
+  
 }
 
 

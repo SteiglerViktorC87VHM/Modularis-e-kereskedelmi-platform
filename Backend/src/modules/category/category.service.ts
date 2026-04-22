@@ -1,30 +1,80 @@
 
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm'; // Kell az adatbázis-kapcsolathoz
+
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Category } from './entities/category.entity'; // Beimportáljuk a tervrajzot
+import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoryService {
   constructor(
-    @InjectRepository(Category) // Beadjuk a "szakácsnak" a Category tábla kulcsait
+    @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
   ) {}
 
+  private generateSlug(text: string): string {
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  }
+
   async create(createCategoryDto: CreateCategoryDto) {
-    // Létrehozunk egy új kategória példányt a kapott adatokból
-    const newCategory = this.categoryRepository.create(createCategoryDto);
-    // Elmentjük az adatbázisba és megvárjuk (await), amíg végez
+    const { name, storeId } = createCategoryDto;
+    
+    let slug = createCategoryDto.slug;
+    if (!slug || slug.trim() === '') {
+      slug = this.generateSlug(name);
+    }
+
+    const existingCategory = await this.categoryRepository.findOne({
+      where: { 
+        slug: slug, 
+        store: { id: storeId } 
+      },
+    });
+
+    if (existingCategory) {
+      return existingCategory;
+    }
+
+    const newCategory = this.categoryRepository.create({
+      ...createCategoryDto,
+      slug,
+      store: { id: storeId } as any,
+    });
+
     return await this.categoryRepository.save(newCategory);
   }
 
   async findAll() {
-    // Visszaadjuk az összes kategóriát az adatbázisból
-    return await this.categoryRepository.find();
+    return await this.categoryRepository.find({
+      relations: ['store'],
+    });
   }
 
-  // A többi metódust (findOne, update, remove) egyelőre hagyhatod, 
-  // vagy átírhatod hasonlóan a repository használatával.
+  async findOne(id: string) {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      relations: ['store'],
+    });
+
+    if (!category) {
+      throw new NotFoundException('A keresett kategória nem található!');
+    }
+
+    return category;
+  }
 }
+
+
+
+
+
+

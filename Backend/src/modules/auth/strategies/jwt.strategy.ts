@@ -7,21 +7,27 @@ import { ConfigService } from '@nestjs/config';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
     super({
-      // 1. Kicsomagoljuk a tokent a fejlécből (Bearer Token)
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      // 2. Ellenőrizzük a titkos kulccsal
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'titkos-kulcs-123', 
+      secretOrKey: 'valami_nagyon_titkos_szoveg_123', 
     });
   }
 
-  // 3. Ez a legfontosabb rész!
+  // Ez a metódus fut le, amikor a Passport megpróbálja felnyitni a tokent
   async validate(payload: any) {
-    // Amit itt visszaadsz, az kerül bele a request.user-be
+    console.log('--- JWT STRATEGY: VALIDATE LEFUTOTT ---');
+    console.log('A token tartalma (payload):', payload);
+
+    if (!payload) {
+      console.log('HIBA: Nincs payload a tokenben!');
+      return null;
+    }
+
+    // Amit itt visszaadunk, az lesz a req.user!
     return { 
       userId: payload.sub, 
       email: payload.email, 
-      role: payload.role // <--- Ezt fogja a RolesGuard keresni!
+      role: payload.role 
     };
   }
 }

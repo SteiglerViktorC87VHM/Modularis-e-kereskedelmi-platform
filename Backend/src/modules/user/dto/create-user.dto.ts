@@ -1,5 +1,6 @@
 // src/modules/user/dto/create-user.dto.ts
-import { IsEmail, IsString, MinLength, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsNotEmpty, IsEnum } from 'class-validator';
+import { Role } from '../enum/role.enum';
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Érvénytelen e-mail cím!' })
@@ -15,7 +16,7 @@ export class CreateUserDto {
   @MinLength(6, { message: 'A jelszónak legalább 6 karakternek kell lennie!' })
   password: string;
 
-  @IsString()
+  @IsEnum(Role, { message: 'Érvénytelen jogosultság!' }) 
   @IsOptional()
-  role?: string;
+  role?: Role; //
 }

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, MinLength, IsOptional } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -7,8 +7,8 @@ export class CreateCategoryDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty()
-  slug: string;
+  @IsOptional()
+  slug?: string;
 
   @IsUUID('4', { message: 'Érvénytelen bolt azonosító (UUID szükséges)!' })
   storeId: string;

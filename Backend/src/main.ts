@@ -1,17 +1,31 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-// Ez a rész aktiválja a validációt
+  app.enableCors({
+    origin: 'http://localhost:3001',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
+  const config = new DocumentBuilder()
+    .setTitle('Modular E-commerce API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,       // Csak azokat a mezőket engedi át, amik a DTO-ban szerepelnek
-    forbidNonWhitelisted: true, // Hibát dob, ha olyan adat jön, ami nincs a DTO-ban
-    transform: true,       // Automatikusan átalakítja a típusokat (pl. string "5" -> number 5)
+    whitelist: true,
+    transform: true,
   }));
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log('--- A BACKEND ELINDULT ÉS AZ ADATBÁZIS FELÉPÜLT! ---');
 }
 bootstrap();

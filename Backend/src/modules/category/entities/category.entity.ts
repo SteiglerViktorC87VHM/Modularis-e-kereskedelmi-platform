@@ -1,34 +1,33 @@
-import { Store } from "src/modules/store/entities/store.entity";
-import { Entity,PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany ,JoinColumn  } from"typeorm";
-import { Product } from "src/modules/product/entities/product.entity";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, Unique, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Store } from '../../store/entities/store.entity';
+import { Product } from '../../product/entities/product.entity';
 
-@Entity('categories')
+@Entity()
+@Unique(['slug', 'store']) 
 export class Category {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @Column()
+  name: string;
 
-    @Column({unique: true})
-    name: string;
+  @Column()
+  slug: string;
 
-    @Column({unique: true})
-    slug: string;
+  // category.entity.ts
 
-    @Column({ type: 'uuid' })
-    storeId: string;
-
-
-    @CreateDateColumn()
-    createdAt: Date;
-
-// Kapcsolat a bolttal
-@ManyToOne(() => Store, (store) => store.categories, { onDelete: 'CASCADE' })
-@JoinColumn({ name: 'storeId' }) 
+@ManyToOne(() => Store, (store) => store.categories, { 
+  onDelete: 'CASCADE'
+})
 store: Store;
 
-// Kapcsolat a termékekkel (A termék "gazdája" a kategória)
-@OneToMany(() => Product, (product) => product.category)
-products: Product[];
+  // Ez a mező kell a Product entitás visszaigazolásához
+  @OneToMany(() => Product, (product) => product.category)
+  products: Product[];
 
+  @CreateDateColumn()
+  createdAt: Date;
 
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

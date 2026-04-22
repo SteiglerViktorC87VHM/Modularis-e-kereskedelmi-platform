@@ -2,15 +2,15 @@ import { IsString, IsNotEmpty, IsOptional, IsObject, MinLength } from 'class-val
 
 export class CreateStoreDto {
   @IsString()
-  @IsNotEmpty()
-  @MinLength(3)
+  @IsNotEmpty({ message: 'A bolt neve nem lehet üres!' })
+  @MinLength(3, { message: 'A bolt nevének legalább 3 karakternek kell lennie!' })
   name: string;
 
   @IsString()
-  @IsNotEmpty()
-  slug: string;
+  @IsOptional() // Mostantól nem kötelező megadni! [cite: 74]
+  slug?: string;
 
-  @IsObject()
-  @IsOptional() // Mivel a nullable: true van az entitásban
-  config?: any;
+  @IsObject({ message: 'A konfigurációnak érvényes JSON objektumnak kell lennie!' })
+  @IsOptional()
+  config?: Record<string, any>; 
 }

@@ -22,9 +22,11 @@ export class OrderItem {
   // KAPCSOLATOK DEFINIÁLÁSA
 
   // Sok tétel tartozhat egyetlen rendeléshez (Many-to-One)
-  @ManyToOne(() => Order, (order) => order.items)
-  @JoinColumn({ name: 'order_id' })
-  order: Order;
+@ManyToOne(() => Order, (order) => order.items, { 
+  onDelete: 'CASCADE' 
+})
+@JoinColumn({ name: 'order_id' }) 
+order: Order;
 
   // Sok rendelési tétel mutathat ugyanarra a termékre (Many-to-One)
   @ManyToOne(() => Product)

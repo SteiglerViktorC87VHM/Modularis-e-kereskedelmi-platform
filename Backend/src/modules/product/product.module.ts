@@ -3,14 +3,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductService } from './product.service';
 import { ProductController } from './product.controller';
 import { Product } from './entities/product.entity';
-import { Category } from 'src/modules/category/entities/category.entity';
-import { Store } from 'src/modules/store/entities/store.entity';
-
-
-// src/modules/product/product.module.ts
+// Importáljuk a StoreModule-t, hogy elérjük a StoreService-t
+import { StoreModule } from 'src/modules/store/store.module'; 
+import { CategoryModule } from '../category/category.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Category, Store])], // Ez regisztrálja a repository-t
+  imports: [
+    TypeOrmModule.forFeature([Product]), 
+    StoreModule,
+    CategoryModule 
+  ],
   controllers: [ProductController],
   providers: [ProductService],
 })

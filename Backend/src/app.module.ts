@@ -1,40 +1,33 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { StoreModule } from './modules/store/store.module'; 
 import { CategoryModule } from './modules/category/category.module';
-import { ProductModule} from 'src/modules/product/product.module'; 
+import { ProductModule } from './modules/product/product.module'; 
 import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { PageModule } from './modules/page/page.module';
 import { ComponentModule } from './modules/component/component.module';
 import { WebhookEventModule } from './modules/webhook-event/webhook-event.module';
 import { PluginModule } from './modules/plugin/plugin.module';
 import { OrderModule } from './modules/order/order.module';
 import { InstalledPluginModule } from './modules/installed-plugin/installed-plugin.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
-import { RolesGuard } from './modules/auth/guards/roles.guard';
-import { APP_GUARD } from '@nestjs/core/constants';
-
 
 @Module({
   imports: [
-
-
-// 2. EZ LEGYEN AZ ELSŐ AZ IMPORTS LISTÁBAN:
-    ConfigModule.forRoot({
-      isGlobal: true, 
-    }),
-
-
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: process.env.DB_USERNAME || 'user', // Ha nincs az env-ben, a 'user'-t használja
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_NAME || 'modular_ecommerce',
+      host: process.env.DATABASE_HOST || 'localhost',
+      port: parseInt(String(process.env.DATABASE_PORT || 5432), 10),
+      // A docker-compose.yml alapján ezek a jó adatok:
+      username: 'user', 
+      password: 'password',
+      database: 'modular_ecommerce',
       autoLoadEntities: true,
-      synchronize: true, // fejlesztés alatt ez csinálja meg a táblákat
+      // Mivel a Docker tiszta, ez most hiba nélkül felépíti a rendszert
+      synchronize: true,
+      logging: false,
     }),
     StoreModule,
     CategoryModule,
@@ -47,16 +40,6 @@ import { APP_GUARD } from '@nestjs/core/constants';
     InstalledPluginModule,
     OrderModule,
     AuthModule,
-    
-  ],
-providers: [
-    // EZ HIÁNYZIK MÉG:
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
   ],
 })
-
-
 export class AppModule {}

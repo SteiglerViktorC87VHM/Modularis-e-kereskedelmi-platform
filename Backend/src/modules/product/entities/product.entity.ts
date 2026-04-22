@@ -1,26 +1,37 @@
-    import { Entity ,PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from 'typeorm';
-    import { Category } from 'src/modules/category/entities/category.entity';
+ import { Entity ,PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from 'typeorm';
+ import { Category } from 'src/modules/category/entities/category.entity';
+ import { Store } from 'src/modules/store/entities/store.entity';
 
-    @Entity('products')
-    export class Product {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+   // src/modules/product/entities/product.entity.ts
+@Entity('products')
+export class Product {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column() 
-    name: string;
+  @Column()
+  name: string;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    price: number;
+  @Column('decimal', { precision: 10, scale: 2 })
+  price: number;
 
-    @Column({ default: 0 }) 
-    stock: number;
+  @Column({ default: 0 })
+  stock: number;
 
-    @ManyToOne(() => Category, category => category.products)
-    @JoinColumn({ name: 'categoryId' })
-    category: Category;
+  // Közvetlen kapcsolat a bolttal
+  @Column({ type: 'uuid' })
+  storeId: string;
 
-    @Column({ type: 'uuid' })
-    categoryId: string;
+ @ManyToOne(() => Store, (store) => store.products, { 
+    onDelete: 'CASCADE' 
+  })
+  @JoinColumn({ name: 'storeId' })
+  store: Store;
 
-    }
+  
+  @Column({ type: 'uuid' })
+  categoryId: string;
 
+  @ManyToOne(() => Category, (category) => category.products)
+  @JoinColumn({ name: 'categoryId' })
+  category: Category;
+}

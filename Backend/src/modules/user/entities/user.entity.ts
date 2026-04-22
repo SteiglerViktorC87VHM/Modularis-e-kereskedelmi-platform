@@ -1,5 +1,5 @@
 import { Store } from 'src/modules/store/entities/store.entity';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { Role } from '../enum/role.enum';
 
 @Entity('users')
@@ -26,8 +26,7 @@ role: Role;
   @CreateDateColumn()
   createdAt: Date;
 
-@ManyToMany(() => Store, (store) => store.users)
-@JoinTable()
+@OneToMany(() => Store, (store) => store.owner)
 stores: Store[];
 
 }
