@@ -64,10 +64,8 @@ export class StoreService {
     }
 
    if (!store.config) {
-     
       const newConfig = new StoreConfig();
       Object.assign(newConfig, configData); 
-      
       store.config = newConfig; 
     } else {
       Object.assign(store.config, configData);
@@ -80,32 +78,44 @@ export class StoreService {
     return await this.storeRepository.find({ relations: ['owner', 'config'] });
   }
 
-  // store.service.ts
+  async findOne(id: string) {
+    const store = await this.storeRepository.findOne({
+      where: { id },
+      relations: ['owner', 'config', 'products'], 
+    });
+    if (!store) throw new NotFoundException('Bolt nem található');
+    return store;
+  }
 
-async findOne(id: string) {
-  const store = await this.storeRepository.findOne({
-    where: { id },
-    // Cseréld ki erre a sorra, hogy a termékek is megérkezzenek:
-    relations: ['owner', 'config', 'products'], 
-  });
-  if (!store) throw new NotFoundException('Bolt nem található');
-  return store;
-}
-
-async findAllByUser(userId: string) {
-  return await this.storeRepository.find({
-    where: { owner: { id: userId } },
-    // Itt is fontos a 'products' kapcsolat!
-    relations: ['owner', 'config', 'products'] 
-  });
-}
-
+  async findAllByUser(userId: string) {
+    return await this.storeRepository.find({
+      where: { owner: { id: userId } },
+      relations: ['owner', 'config', 'products'] 
+    });
+  }
 
   async update(id: string, updateStoreDto: UpdateStoreDto, user: any) {
     const store = await this.findOne(id);
     if (store.owner.id !== user.userId && user.role !== 'ADMIN') {
       throw new ForbiddenException('Nincs jogosultságod!');
     }
+
+    // --- JAVÍTÁS ITT KEZDŐDIK ---
+    // Ha a Frontend küldött 'config' adatokat (oldalak, színek, stb.)
+    if (updateStoreDto.config) {
+      if (store.config) {
+        // Ha már van config az adatbázisban, csak BELEFÉSÜLJÜK az újat (így megmarad az ID-ja)
+        Object.assign(store.config, updateStoreDto.config);
+      } else {
+        // Ha valamiért teljesen üres lenne a bolt beállítása
+        const newConfig = new StoreConfig();
+        Object.assign(newConfig, updateStoreDto.config);
+        store.config = newConfig;
+      }
+      // Töröljük a DTO-ból a configot, hogy a lenti "buta" Object.assign ne írja felül véletlenül
+      delete updateStoreDto.config;
+    }
+    // --- JAVÍTÁS VÉGE ---
 
     Object.assign(store, updateStoreDto);
     if (updateStoreDto.name && !updateStoreDto.slug) {
