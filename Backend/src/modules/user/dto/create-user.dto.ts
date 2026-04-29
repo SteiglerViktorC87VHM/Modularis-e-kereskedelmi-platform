@@ -8,7 +8,7 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  @IsOptional() // Mivel az entity-ben nullable: true, itt is opcionális lehet
+  @IsOptional() 
   username?: string;
 
   @IsString()
@@ -18,5 +18,26 @@ export class CreateUserDto {
 
   @IsEnum(Role, { message: 'Érvénytelen jogosultság!' }) 
   @IsOptional()
-  role?: Role; //
+  role?: Role; 
+
+  // --- ÚJ MEZŐK ---
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  zip?: string;
+
+  @IsString()
+  @IsOptional()
+  profilePicture?: string;
 }

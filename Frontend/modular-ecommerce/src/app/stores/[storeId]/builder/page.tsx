@@ -72,6 +72,11 @@ export default function StoreBuilderPage() {
   const [isHoveringCanvas, setIsHoveringCanvas] = useState(false);
   const [navSourceId, setNavSourceId] = useState<string | null>(null);
 
+  // --- LAPOZÓ LOGIKA (PAGINATION) ---
+  const pagesPerPage = 5;
+  const totalPages = pages.length;
+  const currentGroup = Math.floor(currentPageIndex / pagesPerPage);
+
   // Okosított State Frissítő: Megakadályozza a méretvesztést
   const setPageBlocks = (updater: PageBlock[] | ((prev: PageBlock[]) => PageBlock[])) => {
     setPages(prevPages => {
@@ -147,6 +152,20 @@ export default function StoreBuilderPage() {
     };
     loadActiveStore();
   }, [currentStoreId]);
+
+  // --- ÚJ: Bolt megosztása függvény (Kikerült a handleSave-ből a helyére) ---
+  const handleShareStore = () => {
+    // Generáljuk a publikus linket (a jelenlegi domain + /shop/ + storeId)
+    const publicUrl = `${window.location.origin}/shop/${storeId}`;
+    
+    // Vágólapra másoljuk
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      alert(`✅ A bolt linkje sikeresen másolva a vágólapra!\n\nEzt a linket küldheted a vásárlóknak:\n${publicUrl}`);
+    }).catch(err => {
+      // Biztonsági tartalék, ha a böngésző blokkolná a másolást
+      alert(`A te publikus boltod linkje:\n${publicUrl}`);
+    });
+  };
 
   // --- A VÉGSŐ DOM SZKENNER MENTÉSHEZ ---
   const handleSave = async () => {
@@ -874,6 +893,13 @@ export default function StoreBuilderPage() {
                className="bg-transparent border-none text-[10px] text-blue-400 font-bold uppercase tracking-widest hover:bg-white/5 px-2 py-1 rounded w-40 focus:outline-none"
              />
            </div>
+           
+           <button 
+             onClick={handleShareStore}
+             className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[10px] font-black uppercase hover:bg-blue-600/40 hover:scale-105 transition-all shadow-lg shadow-blue-900/20"
+           >
+             <span className="text-sm">🔗</span> Link Másolása
+           </button>
         </div>
 
         <div 
@@ -894,21 +920,62 @@ export default function StoreBuilderPage() {
           )}
         </div>
         
+        {/* --- ÚJ LAPOZÓ SÁV A BUILDERBEN --- */}
         <div className="fixed bottom-6 left-1/2 flex items-center gap-2 bg-[#001529]/95 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-2xl z-50 transform ml-40">
-           <span className="text-[9px] text-gray-500 font-bold px-3 border-r border-white/10">OLDALAK:</span>
-           {pages.map((p, index) => (
-             <button 
-               key={p.id} 
-               onClick={(e) => { e.stopPropagation(); setCurrentPageIndex(index); setSelectedBlockId(null); }} 
-               className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPageIndex === index ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
-               title={p.name}
-             >
-               {index + 1}
-             </button>
-           ))}
+           <span className="text-[9px] text-gray-500 font-bold px-3 border-r border-white/10 uppercase">OLDALAK:</span>
+
+           {/* Előző gomb */}
+           <button 
+             disabled={currentPageIndex === 0}
+             onClick={(e) => { e.stopPropagation(); setCurrentPageIndex(currentPageIndex - 1); setSelectedBlockId(null); }}
+             className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white disabled:opacity-20 hover:bg-white/10 transition"
+           >
+             ←
+           </button>
+
+           {/* Oldalszámok csoportosítva */}
+           {pages
+             .slice(currentGroup * pagesPerPage, (currentGroup * pagesPerPage) + pagesPerPage)
+             .map((p, idx) => {
+                const actualIndex = (currentGroup * pagesPerPage) + idx;
+                const isActive = currentPageIndex === actualIndex;
+                
+                return (
+                  <button 
+                    key={p.id} 
+                    onClick={(e) => { e.stopPropagation(); setCurrentPageIndex(actualIndex); setSelectedBlockId(null); }} 
+                    className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${
+                      isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
+                    }`}
+                    title={p.name}
+                  >
+                    {actualIndex + 1}
+                  </button>
+                );
+             })
+           }
+
+           {/* Ha van még több csoport */}
+           {totalPages > (currentGroup * pagesPerPage) + pagesPerPage && (
+             <span className="text-gray-500 font-bold px-1 text-xs">...</span>
+           )}
+
+           {/* Következő gomb */}
+           <button 
+             disabled={currentPageIndex === totalPages - 1}
+             onClick={(e) => { e.stopPropagation(); setCurrentPageIndex(currentPageIndex + 1); setSelectedBlockId(null); }}
+             className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white disabled:opacity-20 hover:bg-white/10 transition"
+           >
+             →
+           </button>
+
+           <div className="w-px h-6 bg-white/10 mx-1"></div>
+
+           {/* Új lap hozzáadása */}
            <button 
              onClick={(e) => { e.stopPropagation(); addNewPage(); }} 
              className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold hover:bg-blue-600/40 transition flex items-center justify-center text-lg"
+             title="Új oldal hozzáadása"
            >
              +
            </button>

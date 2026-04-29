@@ -17,16 +17,31 @@ export class User {
   password: string;
 
   @Column({
-  type: 'enum',
-  enum: Role,
-  default: Role.USER,
-})
-role: Role;
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
+  })
+  role: Role;
+
+  // --- ÚJ MEZŐK A VÁSÁRLÓNAK ---
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  zip: string;
+
+  @Column({ nullable: true })
+  profilePicture: string;
 
   @CreateDateColumn()
   createdAt: Date;
 
-@OneToMany(() => Store, (store) => store.owner)
-stores: Store[];
-
+  @OneToMany(() => Store, (store) => store.owner)
+  stores: Store[];
 }

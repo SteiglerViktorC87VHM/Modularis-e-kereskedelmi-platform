@@ -1,12 +1,15 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState(''); 
+  // Választható szerepkör (alapból customer)
+  const [selectedRole, setSelectedRole] = useState<'store_owner' | 'customer'>('customer'); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(''); 
   const router = useRouter();
@@ -17,9 +20,10 @@ export default function AuthPage() {
     setError(''); 
 
     const endpoint = isLogin ? '/auth/login' : '/user';
+    // Beküldjük a választott szerepkört regisztrációnál
     const payload = isLogin 
       ? { email, password } 
-      : { email, password, username, role: 'store_owner' };
+      : { email, password, username, role: selectedRole };
 
     try {
       const res = await fetch(`http://localhost:3000${endpoint}`, {
@@ -33,65 +37,87 @@ export default function AuthPage() {
       if (res.ok) {
         if (isLogin) {
           localStorage.setItem('token', data.access_token);
-          router.push('/stores'); 
-        } else {
-          // SIKERES REGISZTRÁCIÓ:
-          alert('Sikeres regisztráció!');
           
-          // Itt a trükk: Az email marad, a többit ürítjük, és átváltunk Login-ra
-          setIsLogin(true); 
+          // --- ÚJ FUNKCIÓ: Visszairányítás figyelése ---
+          // Megnézzük, hogy a link tartalmaz-e visszatérési címet (pl. ?returnTo=/shop/123)
+          const searchParams = new URLSearchParams(window.location.search);
+          const returnTo = searchParams.get('returnTo');
+
+          if (returnTo) {
+            router.push(returnTo); // Ha egy boltból jött, visszavisszük a boltba/pénztárhoz!
+          } else {
+            // Dekódoljuk a tokent a hagyományos belépéshez, hogy tudjuk, hova irányítsunk
+            try {
+              const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1]));
+              if (tokenPayload.role === 'store_owner' || tokenPayload.role === 'admin') {
+                router.push('/stores');
+              } else {
+                router.push('/customer/dashboard');
+              }
+            } catch (e) {
+              router.push('/');
+            }
+          }
+        } else {
+          alert('Sikeres regisztráció! Most jelentkezz be.');
+          setIsLogin(true);
           setPassword('');
-          setUsername('');
-          setError('');
         }
       } else {
-        // --- JAVÍTOTT HIBAKEZELÉS ---
-        if (res.status === 500 || res.status === 409 || (data.message && data.message.includes('unique'))) {
-           // Ha regisztráció közben jön 500-as hiba, az szinte fixen a duplikáció miatt van
-           setError(!isLogin 
-             ? 'Ez az e-mail cím vagy felhasználónév már foglalt!' 
-             : 'Hiba a bejelentkezés során!');
-        } else if (res.status === 401) {
-           setError('Hibás e-mail cím vagy jelszó!');
-        } else {
-           setError(data.message || 'Valami hiba történt. Próbáld újra!');
-        }
+        setError(data.message || 'Hiba történt a művelet során.');
       }
     } catch (err) {
-      setError('A szerver nem elérhető. Indítsd el a backendet!');
+      setError('Nem sikerült csatlakozni a szerverhez.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#001f3f] text-white p-4">
-      <div className="w-full max-w-md p-8 bg-slate-800 rounded-2xl shadow-2xl border border-blue-900">
-        
-        <h1 className="text-2xl font-bold text-center mb-6 text-blue-400">
+    <div className="min-h-screen flex items-center justify-center bg-[#000b1a] text-white p-4">
+      <div className="max-w-md w-full bg-[#001529] border border-blue-900/30 p-8 rounded-2xl shadow-2xl">
+        <h2 className="text-3xl font-black mb-6 text-center text-blue-400">
           {isLogin ? 'Bejelentkezés' : 'Regisztráció'}
-        </h1>
+        </h2>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-500/20 border border-red-500 rounded-xl text-red-400 text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg mb-6 text-sm">
             {error}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Felhasználónév</label>
-              <input 
-                type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
-                placeholder="pl. Teszt Elek"
-                className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-blue-500 transition"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Felhasználónév</label>
+                <input 
+                  type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-blue-500 transition"
+                />
+              </div>
+
+              {/* Fiók típusa regisztrációkor */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Fiók típusa</label>
+                <div className="flex gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setSelectedRole('customer')}
+                    className={`flex-1 p-3 rounded-xl border text-xs font-bold transition-all ${selectedRole === 'customer' ? 'border-blue-500 bg-blue-600/20 text-blue-400' : 'border-slate-700 bg-slate-900 text-gray-500'}`}
+                  >🛍️ Vásárló</button>
+                  <button 
+                    type="button"
+                    onClick={() => setSelectedRole('store_owner')}
+                    className={`flex-1 p-3 rounded-xl border text-xs font-bold transition-all ${selectedRole === 'store_owner' ? 'border-blue-500 bg-blue-600/20 text-blue-400' : 'border-slate-700 bg-slate-900 text-gray-500'}`}
+                  >🏪 Eladó</button>
+                </div>
+              </div>
+            </>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">E-mail</label>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Email</label>
             <input 
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-blue-500 transition"
@@ -99,7 +125,15 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Jelszó</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-xs font-bold text-gray-400 uppercase">Jelszó</label>
+              {/* Elfelejtett jelszó link */}
+              {isLogin && (
+                <Link href="/forgot-password" size="sm" className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-tighter transition">
+                  Elfelejtette?
+                </Link>
+              )}
+            </div>
             <input 
               type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white outline-none focus:border-blue-500 transition"
@@ -118,12 +152,11 @@ export default function AuthPage() {
           <button 
             type="button"
             onClick={() => { setIsLogin(!isLogin); setError(''); setPassword(''); }}
-            className="text-blue-400 hover:text-blue-300 font-bold underline transition"
+            className="text-blue-400 hover:text-blue-300 font-bold underline decoration-blue-400/30"
           >
             {isLogin ? 'Nincs még fiókod? Regisztrálj!' : 'Már van fiókod? Jelentkezz be!'}
           </button>
         </div>
-
       </div>
     </div>
   );
